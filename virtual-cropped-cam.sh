@@ -27,6 +27,16 @@ fi
 FFMPEG_PID=""
 CURRENT_STATE="none"
 
+# ==============================================================================
+# Oculta a câmera real dos navegadores (e do usuário) alterando as permissões.
+# Como o script agora roda como root (via systemd), ele continua tendo acesso.
+# ==============================================================================
+chmod 0600 "$REAL_CAM" 2>/dev/null
+setfacl -b "$REAL_CAM" 2>/dev/null || true
+# Se houver nó de metadados associado (geralmente video1), oculta também
+chmod 0600 "/dev/video1" 2>/dev/null
+setfacl -b "/dev/video1" 2>/dev/null || true
+
 start_dummy_producer() {
     if [ "$CURRENT_STATE" == "dummy" ]; then
         if kill -0 "$FFMPEG_PID" 2>/dev/null; then
@@ -97,6 +107,12 @@ echo "================================================================="
 start_dummy_producer
 
 while true; do
+    # Garante que a câmera física continue oculta mesmo após o notebook suspender/voltar (o que pode resetar o USB)
+    chmod 0600 "$REAL_CAM" 2>/dev/null
+    setfacl -b "$REAL_CAM" 2>/dev/null || true
+    chmod 0600 "/dev/video1" 2>/dev/null
+    setfacl -b "/dev/video1" 2>/dev/null || true
+
     PIDS=$($FUSER_CMD "$VIRTUAL_CAM" 2>/dev/null)
     
     IN_USE=false
